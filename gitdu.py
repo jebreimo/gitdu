@@ -11,6 +11,11 @@ import os
 VERBOSE = False
 
 
+def info(*args):
+    if VERBOSE:
+        print(*args, file=sys.stderr)
+
+
 class Entry:
     def __init__(self, index_parts):
         self.sha1 = index_parts[0]
@@ -63,8 +68,8 @@ def update_entries(entries, rev_list):
             parts = line.split(maxsplit=1)
             if entry := entries.get(parts[0]):
                 entry.path = parts[1] if len(parts) == 2 else ""
-            elif VERBOSE:
-                print(f"Unpacked entry: {line}", file=sys.stderr)
+            else:
+                info(f"Unpacked entry: {line}")
 
 
 class DirEntry:
@@ -166,33 +171,27 @@ def main():
         return 1
 
     if args.verify_pack and os.path.exists(args.verify_pack):
-        if VERBOSE:
-            print("Reading cached verify-pack output.", file=sys.stderr)
+        info("Reading cached verify-pack output.")
         verify_pack = open(args.verify_pack).read()
     else:
-        if VERBOSE:
-            print("Running verify-pack.", file=sys.stderr)
+        info("Running verify-pack.")
         verify_pack = get_git_verify_pack(git_root)
         if args.verify_pack:
             open(args.verify_pack, "w").write(verify_pack)
 
-    if VERBOSE:
-        print("Parsing verify-pack output.", file=sys.stderr)
+    info("Parsing verify-pack output.")
     entries = parse_git_verify_pack(verify_pack)
 
     if args.rev_list and os.path.exists(args.rev_list):
-        if VERBOSE:
-            print("Reading cached rev-list output.", file=sys.stderr)
+        info("Reading cached rev-list output.")
         rev_list = open(args.rev_list).read()
     else:
-        if VERBOSE:
-            print("Running rev-list.", file=sys.stderr)
+        info("Running rev-list.")
         rev_list = get_git_rev_list()
         if args.rev_list:
             open(args.rev_list, "w").write(rev_list)
 
-    if VERBOSE:
-        print("Parsing rev-list output.", file=sys.stderr)
+    info("Parsing rev-list output.")
     update_entries(entries, rev_list)
 
     max_depth = args.max_depth
